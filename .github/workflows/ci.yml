@@ -6,7 +6,6 @@ on:
   # Lancé à chaque push sur main et develop
   push:
     branches: [ main, develop ]
-    tags: [ 'v*' ]
   # Et à chaque pull request
   pull_request:
 
