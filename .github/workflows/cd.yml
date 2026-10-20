@@ -1,0 +1,50 @@
+# Workflow CD : construction et publication des images Docker
+name: CD devops 2026
+
+on:
+  # Se déclenche quand le workflow CI (par son nom) est terminé
+  workflow_run:
+    workflows: ["CI devops 2026"]
+    types: [completed]
+    # Uniquement quand la CI a tourné sur la branche main
+    branches: [ main ]
+
+jobs:
+  build-and-push-docker-image:
+    runs-on: ubuntu-24.04
+    # Ne s'exécute que si la CI s'est terminée avec succès (pas en cas d'échec ou d'annulation)
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    steps:
+      # Récupère le code exact du commit qui a déclenché la CI
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
+
+      # Connexion à Docker Hub avec les secrets GitHub
+      - name: Login to DockerHub
+        run: echo "${{ secrets.DOCKERHUB_TOKEN }}" | docker login --username ${{ secrets.DOCKERHUB_USERNAME }} --password-stdin
+
+      # Image du backend (Dockerfile dans simple-api)
+      - name: Build image and push backend
+        uses: docker/build-push-action@v6
+        with:
+          context: ./simple-api
+          tags: ${{ secrets.DOCKERHUB_USERNAME }}/tp-devops-simple-api:latest
+          push: true
+
+      # Image de la base de données (Dockerfile dans database)
+      - name: Build image and push database
+        uses: docker/build-push-action@v6
+        with:
+          context: ./database
+          tags: ${{ secrets.DOCKERHUB_USERNAME }}/tp-devops-database:latest
+          push: true
+
+      # Image du serveur HTTP (Dockerfile dans http-server)
+      - name: Build image and push httpd
+        uses: docker/build-push-action@v6
+        with:
+          context: ./http-server
+          tags: ${{ secrets.DOCKERHUB_USERNAME }}/tp-devops-httpd:latest
+          push: true

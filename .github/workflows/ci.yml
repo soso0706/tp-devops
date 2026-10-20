@@ -1,0 +1,33 @@
+# Workflow CI : build, tests et analyse de qualité du backend
+# Le nom ci-dessous est réutilisé par cd.yml (workflow_run), ne le change pas sans modifier cd.yml
+name: CI devops 2026
+
+on:
+  # Lancé à chaque push sur main et develop
+  push:
+    branches: [ main, develop ]
+  # Et à chaque pull request
+  pull_request:
+
+jobs:
+  # Job qui build, teste et analyse le backend (simple-api)
+  test-backend:
+    runs-on: ubuntu-24.04
+    steps:
+      # Récupère le code du dépôt sur le runner
+      - uses: actions/checkout@v4
+
+      # Installe Java 21 (distribution Temurin)
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '21'
+
+      # Compile le projet et lance les tests (unitaires + intégration avec Testcontainers)
+      - name: Build and test with Maven
+        run: mvn clean verify --file simple-api/pom.xml
+
+      # Analyse de la qualité du code avec SonarCloud
+      - name: Analyze with SonarCloud
+        run: mvn -B verify org.sonarsource.scanner.maven:sonar-maven-plugin:sonar -Dsonar.projectKey=soso0706_tp-devops-correction-docker -Dsonar.organization=soso0706 -Dsonar.host.url=https://sonarcloud.io -Dsonar.token=${{ secrets.SONAR_TOKEN }} --file ./simple-api/pom.xml
