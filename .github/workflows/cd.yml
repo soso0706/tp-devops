@@ -6,13 +6,13 @@ on:
   workflow_run:
     workflows: ["CI devops 2026"]
     types: [completed]
-    # Uniquement quand la CI a tourné sur la branche main
-    branches: [ main ]
+    # Uniquement quand la CI a tourné sur main ou sur un tag de version (v1.0.0, etc.)
+    branches: [ main, 'v*' ]
 
 jobs:
   build-and-push-docker-image:
     runs-on: ubuntu-24.04
-    # Ne s'exécute que si la CI s'est terminée avec succès (pas en cas d'échec ou d'annulation)
+    # Ne s'exécute que si la CI s'est terminée avec succès
     if: ${{ github.event.workflow_run.conclusion == 'success' }}
     steps:
       # Récupère le code exact du commit qui a déclenché la CI
@@ -25,12 +25,25 @@ jobs:
       - name: Login to DockerHub
         run: echo "${{ secrets.DOCKERHUB_TOKEN }}" | docker login --username ${{ secrets.DOCKERHUB_USERNAME }} --password-stdin
 
+      # Version = nom du tag Git sans le "v" (ex: v1.0.0 devient 1.0.0), sinon identifiant du commit
+      - name: Compute version
+        id: vars
+        run: |
+          REF="${{ github.event.workflow_run.head_branch }}"
+          if [[ "$REF" == v* ]]; then
+            echo "short_sha=${REF#v}" >> $GITHUB_OUTPUT
+          else
+            echo "short_sha=$(echo '${{ github.event.workflow_run.head_sha }}' | cut -c1-7)" >> $GITHUB_OUTPUT
+          fi
+
       # Image du backend (Dockerfile dans simple-api)
       - name: Build image and push backend
         uses: docker/build-push-action@v6
         with:
           context: ./simple-api
-          tags: ${{ secrets.DOCKERHUB_USERNAME }}/tp-devops-simple-api:latest
+          tags: |
+            ${{ secrets.DOCKERHUB_USERNAME }}/tp-devops-simple-api:latest
+            ${{ secrets.DOCKERHUB_USERNAME }}/tp-devops-simple-api:${{ steps.vars.outputs.short_sha }}
           push: true
 
       # Image de la base de données (Dockerfile dans database)
@@ -38,7 +51,9 @@ jobs:
         uses: docker/build-push-action@v6
         with:
           context: ./database
-          tags: ${{ secrets.DOCKERHUB_USERNAME }}/tp-devops-database:latest
+          tags: |
+            ${{ secrets.DOCKERHUB_USERNAME }}/tp-devops-database:latest
+            ${{ secrets.DOCKERHUB_USERNAME }}/tp-devops-database:${{ steps.vars.outputs.short_sha }}
           push: true
 
       # Image du serveur HTTP (Dockerfile dans http-server)
@@ -46,5 +61,7 @@ jobs:
         uses: docker/build-push-action@v6
         with:
           context: ./http-server
-          tags: ${{ secrets.DOCKERHUB_USERNAME }}/tp-devops-httpd:latest
+          tags: |
+            ${{ secrets.DOCKERHUB_USERNAME }}/tp-devops-httpd:latest
+            ${{ secrets.DOCKERHUB_USERNAME }}/tp-devops-httpd:${{ steps.vars.outputs.short_sha }}
           push: true
