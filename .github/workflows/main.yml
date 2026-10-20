@@ -34,7 +34,7 @@ jobs:
       # Les clés identifient ton projet et ton organisation sur SonarCloud
       # Le token est lu depuis les secrets GitHub (jamais écrit en clair)
       - name: Analyze with SonarCloud
-        run: mvn -B verify sonar:sonar -Dsonar.projectKey=soso0706_tp-devops-correction-docker -Dsonar.organization=soso0706 -Dsonar.host.url=https://sonarcloud.io -Dsonar.login=${{ secrets.SONAR_TOKEN }} --file ./simple-api/pom.xml
+        run: mvn -B verify org.sonarsource.scanner.maven:sonar-maven-plugin:sonar -Dsonar.projectKey=soso0706_tp-devops-correction-docker -Dsonar.organization=soso0706 -Dsonar.host.url=https://sonarcloud.io -Dsonar.token=${{ secrets.SONAR_TOKEN }} --file ./simple-api/pom.xml
 
   # Job qui construit et publie les images Docker sur Docker Hub
   build-and-push-docker-image:
