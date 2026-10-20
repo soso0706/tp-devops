@@ -4,20 +4,26 @@ name: CI devops 2026
 # Déclencheurs : quand le pipeline se lance
 on:
   # À chaque push sur les branches main et develop
+  # À chaque push sur les branches main et develop
   push:
     branches: [ main, develop ]
+  # À chaque ouverture ou mise à jour d'une pull request
   # À chaque ouverture ou mise à jour d'une pull request
   pull_request:
 
 jobs:
   # Job qui build et teste le backend (simple-api)
+  # Job qui build et teste le backend (simple-api)
   test-backend:
+    # Machine virtuelle (runner) fournie par GitHub
     # Machine virtuelle (runner) fournie par GitHub
     runs-on: ubuntu-24.04
     steps:
       # Étape 1 : récupérer le code du dépôt sur le runner
+      # Étape 1 : récupérer le code du dépôt sur le runner
       - uses: actions/checkout@v4
 
+      # Étape 2 : installer Java 21 (distribution Temurin)
       # Étape 2 : installer Java 21 (distribution Temurin)
       - name: Set up JDK 21
         uses: actions/setup-java@v4
@@ -28,6 +34,10 @@ jobs:
       # Étape 3 : compiler le projet et lancer les tests unitaires et d'intégration
       # (les tests d'intégration utilisent Testcontainers avec une base PostgreSQL)
       # --file indique où se trouve le pom.xml, ici dans le dossier simple-api
+      # Étape 3 : compiler le projet et lancer les tests unitaires et d'intégration
+      # (les tests d'intégration utilisent Testcontainers avec une base PostgreSQL)
+      # --file indique où se trouve le pom.xml, ici dans le dossier simple-api
       - name: Build and test with Maven
         run: mvn clean verify --file simple-api/pom.xml
+        
         
