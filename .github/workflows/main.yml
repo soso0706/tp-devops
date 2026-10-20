@@ -4,40 +4,66 @@ name: CI devops 2026
 # Déclencheurs : quand le pipeline se lance
 on:
   # À chaque push sur les branches main et develop
-  # À chaque push sur les branches main et develop
   push:
     branches: [ main, develop ]
-  # À chaque ouverture ou mise à jour d'une pull request
   # À chaque ouverture ou mise à jour d'une pull request
   pull_request:
 
 jobs:
   # Job qui build et teste le backend (simple-api)
-  # Job qui build et teste le backend (simple-api)
   test-backend:
-    # Machine virtuelle (runner) fournie par GitHub
-    # Machine virtuelle (runner) fournie par GitHub
     runs-on: ubuntu-24.04
     steps:
-      # Étape 1 : récupérer le code du dépôt sur le runner
-      # Étape 1 : récupérer le code du dépôt sur le runner
+      # Récupère le code du dépôt sur le runner
       - uses: actions/checkout@v4
 
-      # Étape 2 : installer Java 21 (distribution Temurin)
-      # Étape 2 : installer Java 21 (distribution Temurin)
+      # Installe Java 21 (distribution Temurin)
       - name: Set up JDK 21
         uses: actions/setup-java@v4
         with:
           distribution: 'temurin'
           java-version: '21'
 
-      # Étape 3 : compiler le projet et lancer les tests unitaires et d'intégration
-      # (les tests d'intégration utilisent Testcontainers avec une base PostgreSQL)
-      # --file indique où se trouve le pom.xml, ici dans le dossier simple-api
-      # Étape 3 : compiler le projet et lancer les tests unitaires et d'intégration
-      # (les tests d'intégration utilisent Testcontainers avec une base PostgreSQL)
-      # --file indique où se trouve le pom.xml, ici dans le dossier simple-api
+      # Compile le projet et lance les tests (unitaires + intégration avec Testcontainers)
       - name: Build and test with Maven
         run: mvn clean verify --file simple-api/pom.xml
-        
-        
+
+  # Job qui construit et publie les images Docker sur Docker Hub
+  build-and-push-docker-image:
+    # Ne démarre que si test-backend a réussi (code qui compile et tests verts)
+    needs: test-backend
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # Connexion à Docker Hub avec les secrets GitHub
+      - name: Login to DockerHub
+        run: echo "${{ secrets.DOCKERHUB_TOKEN }}" | docker login --username ${{ secrets.DOCKERHUB_USERNAME }} --password-stdin
+
+      # Image du backend (Dockerfile dans simple-api)
+      - name: Build image and push backend
+        uses: docker/build-push-action@v6
+        with:
+          # Dossier qui contient le Dockerfile
+          context: ./simple-api
+          # Le nom de l'image doit être en minuscules
+          tags: ${{ secrets.DOCKERHUB_USERNAME }}/tp-devops-simple-api:latest
+          # Build sur toutes les branches, push uniquement sur main
+          push: ${{ github.ref == 'refs/heads/main' }}
+
+      # Image de la base de données (Dockerfile dans database)
+      - name: Build image and push database
+        uses: docker/build-push-action@v6
+        with:
+          context: ./database
+          tags: ${{ secrets.DOCKERHUB_USERNAME }}/tp-devops-database:latest
+          push: ${{ github.ref == 'refs/heads/main' }}
+
+      # Image du serveur HTTP (Dockerfile dans http-server)
+      - name: Build image and push httpd
+        uses: docker/build-push-action@v6
+        with:
+          context: ./http-server
+          tags: ${{ secrets.DOCKERHUB_USERNAME }}/tp-devops-httpd:latest
+          push: ${{ github.ref == 'refs/heads/main' }}
