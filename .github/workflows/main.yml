@@ -28,6 +28,14 @@ jobs:
       - name: Build and test with Maven
         run: mvn clean verify --file simple-api/pom.xml
 
+      # Analyse de la qualité du code avec SonarCloud
+      # -B : mode non interactif (adapté aux robots)
+      # sonar:sonar : envoie le rapport d'analyse à SonarCloud
+      # Les clés identifient ton projet et ton organisation sur SonarCloud
+      # Le token est lu depuis les secrets GitHub (jamais écrit en clair)
+      - name: Analyze with SonarCloud
+        run: mvn -B verify sonar:sonar -Dsonar.projectKey=soso0706_tp-devops-correction-docker -Dsonar.organization=soso0706 -Dsonar.host.url=https://sonarcloud.io -Dsonar.login=${{ secrets.SONAR_TOKEN }} --file ./simple-api/pom.xml
+
   # Job qui construit et publie les images Docker sur Docker Hub
   build-and-push-docker-image:
     # Ne démarre que si test-backend a réussi (code qui compile et tests verts)
