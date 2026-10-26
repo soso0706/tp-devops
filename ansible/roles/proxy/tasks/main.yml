@@ -2,6 +2,7 @@
   community.docker.docker_container:
     name: "{{ proxy_container_name }}"
     image: "{{ proxy_image }}"
+    pull: always
     state: started
     restart_policy: always
     ports:

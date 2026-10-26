@@ -59,3 +59,36 @@ jobs:
             ${{ secrets.DOCKERHUB_USERNAME }}/tp-devops-httpd:latest
             ${{ secrets.DOCKERHUB_USERNAME }}/tp-devops-httpd:${{ steps.vars.outputs.version }}
           push: true
+  
+  deploy:
+    runs-on: ubuntu-24.04
+    needs: build-and-push-docker-image
+    steps:
+      # Récupère le code du commit testé (il contient le dossier ansible)
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install Ansible
+        run: pip install ansible
+
+      # Prépare la connexion SSH vers le serveur avec la clé stockée dans les secrets
+      - name: Configure SSH
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+        run: |
+          mkdir -p ~/.ssh
+          printf '%s\n' "$SSH_PRIVATE_KEY" > ~/.ssh/id_rsa
+          chmod 400 ~/.ssh/id_rsa
+          ssh-keyscan solene.martinez.takima.school >> ~/.ssh/known_hosts
+
+      # Lance le playbook : il télécharge les nouvelles images et relance les conteneurs
+      - name: Deploy with Ansible
+        working-directory: ansible
+        run: ansible-playbook -i inventories/setup.yml playbook.yml -e ansible_ssh_private_key_file=$HOME/.ssh/id_rsa

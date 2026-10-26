@@ -2,6 +2,7 @@
   community.docker.docker_container:
     name: "{{ app_container_name }}"
     image: "{{ app_image }}"
+    pull: always
     state: started
     restart_policy: always
     networks:

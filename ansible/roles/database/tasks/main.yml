@@ -2,6 +2,7 @@
   community.docker.docker_container:
     name: "{{ db_container_name }}"
     image: "{{ db_image }}"
+    pull: always
     state: started
     restart_policy: always
     networks:
