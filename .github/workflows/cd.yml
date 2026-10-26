@@ -56,10 +56,20 @@ jobs:
         with:
           context: ./http-server
           tags: |
-            ${{ secrets.DOCKERHUB_USERNAME }}/tp-devops-httpd:latest
-            ${{ secrets.DOCKERHUB_USERNAME }}/tp-devops-httpd:${{ steps.vars.outputs.version }}
+            ${{ secrets.DOCKERHUB_USERNAME }}sosomartinez/tp-devops-httpd:latest
+            ${{ secrets.DOCKERHUB_USERNAME }}sosomartinez/tp-devops-httpd:${{ steps.vars.outputs.version }}
           push: true
-  
+
+      # Image du front (Dockerfile dans devops-front)
+      - name: Build image and push front
+        uses: docker/build-push-action@v6
+        with:
+          context: ./devops-front
+          tags: |
+            ${{ secrets.DOCKERHUB_USERNAME }}sosomartinez/tp-devops-front:latest
+            ${{ secrets.DOCKERHUB_USERNAME }}sosomartinez/tp-devops-front:${{ steps.vars.outputs.version }}
+          push: true
+
   deploy:
     runs-on: ubuntu-24.04
     needs: build-and-push-docker-image
