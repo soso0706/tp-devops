@@ -1,0 +1,12 @@
+- name: Run proxy
+  community.docker.docker_container:
+    name: "{{ proxy_container_name }}"
+    image: "{{ proxy_image }}"
+    state: started
+    restart_policy: always
+    ports:
+      - "80:80"
+    networks:
+      - name: app-network
+  vars:
+    ansible_python_interpreter: /opt/docker_venv/bin/python

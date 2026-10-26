@@ -1,0 +1,5 @@
+db_container_name: database
+db_image: sosomartinez/tp-devops-database:1.0.4
+db_name: db
+db_user: usr
+db_password: pwd
