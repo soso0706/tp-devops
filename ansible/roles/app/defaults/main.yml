@@ -2,5 +2,3 @@ app_container_name: simple-api
 app_image: sosomartinez/tp-devops-simple-api:1.0.4
 db_container_name: database
 db_name: db
-db_user: usr
-db_password: pwd

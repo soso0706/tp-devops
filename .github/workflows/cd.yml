@@ -80,14 +80,6 @@ jobs:
         with:
           ref: ${{ github.event.workflow_run.head_sha }}
 
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.12'
-
-      - name: Install Ansible
-        run: pip install ansible
-
       # Prépare la connexion SSH vers le serveur avec la clé stockée dans les secrets
       - name: Configure SSH
         env:
@@ -98,7 +90,26 @@ jobs:
           chmod 400 ~/.ssh/id_rsa
           ssh-keyscan solene.martinez.takima.school >> ~/.ssh/known_hosts
 
-      # Lance le playbook : il télécharge les nouvelles images et relance les conteneurs
-      - name: Deploy with Ansible
-        working-directory: ansible
-        run: ansible-playbook -i inventories/setup.yml playbook.yml -e ansible_ssh_private_key_file=$HOME/.ssh/id_rsa
+      # Écrit le mot de passe du vault dans un fichier temporaire (hors du dépôt)
+      - name: Prepare vault password
+        env:
+          ANSIBLE_VAULT_PASSWORD: ${{ secrets.ANSIBLE_VAULT_PASSWORD }}
+        run: |
+          printf '%s' "$ANSIBLE_VAULT_PASSWORD" > $HOME/.vault_pass
+          chmod 600 $HOME/.vault_pass
+
+      # Construit l'image Docker qui contient Ansible (ansible/Dockerfile)
+      - name: Build Ansible image
+        run: docker build -t ansible-runner ./ansible
+
+      # Lance le playbook DANS le conteneur Ansible, avec le vault pour les mots de passe
+      - name: Deploy with Ansible (Docker + Vault)
+        run: |
+          docker run --rm \
+            -v "$GITHUB_WORKSPACE/ansible:/ansible" \
+            -v "$HOME/.ssh:/root/.ssh:ro" \
+            -v "$HOME/.vault_pass:/vault_pass:ro" \
+            ansible-runner \
+            ansible-playbook -i inventories/setup.yml playbook.yml \
+              --vault-password-file /vault_pass \
+              -e ansible_ssh_private_key_file=/root/.ssh/id_rsa

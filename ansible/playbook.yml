@@ -2,6 +2,9 @@
   gather_facts: true
   become: true
 
+  vars_files:
+    - vault.yml
+
   roles:
     - docker
     - network
