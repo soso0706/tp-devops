@@ -1,2 +1,2 @@
 proxy_container_name: httpd
-proxy_image: sosomartinez/tp-devops-httpd:1.0.4
+proxy_image: sosomartinez/tp-devops-httpd:latest
