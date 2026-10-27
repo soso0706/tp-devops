@@ -56,8 +56,8 @@ jobs:
         with:
           context: ./http-server
           tags: |
-            ${{ secrets.DOCKERHUB_USERNAME }}sosomartinez/tp-devops-httpd:latest
-            ${{ secrets.DOCKERHUB_USERNAME }}sosomartinez/tp-devops-httpd:${{ steps.vars.outputs.version }}
+            ${{ secrets.DOCKERHUB_USERNAME }}/tp-devops-httpd:latest
+            ${{ secrets.DOCKERHUB_USERNAME }}/tp-devops-httpd:${{ steps.vars.outputs.version }}
           push: true
 
       # Image du front (Dockerfile dans devops-front)
@@ -66,8 +66,8 @@ jobs:
         with:
           context: ./devops-front
           tags: |
-            ${{ secrets.DOCKERHUB_USERNAME }}sosomartinez/tp-devops-front:latest
-            ${{ secrets.DOCKERHUB_USERNAME }}sosomartinez/tp-devops-front:${{ steps.vars.outputs.version }}
+            ${{ secrets.DOCKERHUB_USERNAME }}/tp-devops-front:latest
+            ${{ secrets.DOCKERHUB_USERNAME }}/tp-devops-front:${{ steps.vars.outputs.version }}
           push: true
 
   deploy:
